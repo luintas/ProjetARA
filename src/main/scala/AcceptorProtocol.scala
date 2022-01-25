@@ -15,6 +15,7 @@ case class AcceptorProtocol(val prefix: String) extends EDProtocol {
     private var roundNum : Long = 0;
     private var choosedValue: Long = 0;
     private var oldValue: List[Integer] = List[Integer]();
+    private var oldRoundNum: Long = 0;
 
     override def processEvent(host: Node, pid: Int, event: Object): Unit = {
     if (pid != mypid)
@@ -40,7 +41,9 @@ case class AcceptorProtocol(val prefix: String) extends EDProtocol {
     def receivePrepare(host: Node, mess: Messages.Prepare){
         //si n > a (num round)
         if(mess.roundNum> roundNum){
-
+            oldRoundNum = roundNum;
+            roundNum = mess.roundNum
+            broadcast(host, sendPromise)
         }else{
             // sendReject
             broadcast(host, sendReject)
@@ -62,6 +65,12 @@ case class AcceptorProtocol(val prefix: String) extends EDProtocol {
     def sendReject(host: Node, dest: Node, tr: Transport){
         val mess: Reject =
             new Reject(host.getID(), dest.getID(), mypid, roundNum)
+        tr.send(host, dest, mess, mypid)
+    }
+
+    def sendPromise(host:Node, dest: Node, tr: Transport){
+        val mess: Promises = 
+            new Promises(host.getID(), dest.getID(), mypid, roundNum, choosedValue, oldRoundNum)
         tr.send(host, dest, mess, mypid)
     }
 

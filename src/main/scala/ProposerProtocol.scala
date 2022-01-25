@@ -16,6 +16,8 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
   private var mylist: List[Integer] = List[Integer]();
   private var deja_dit_bonjour: Boolean = false;
   private var currentRoundNum: Int = 0;
+  private var isLeader = false ;
+  private var haveAleader = false;
 
   private val acceptorsCount = 0; //TODO Find a way to get the actual value
   private var promiseReceivedCount = 0;
@@ -26,10 +28,13 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
       throw new IllegalArgumentException(
         "Incoherence sur l'identifiant de protocole"
       );
-    if (event.isInstanceOf[Promises]) {
-      receivePromise(host, event.asInstanceOf[Promises])
-    } else {
-      throw new IllegalArgumentException("Evenement inconnu pour ce protocole");
+    event match {
+      case mess: Promises     => receivePromise(host, mess)
+      case mess: StartMessage => receiveStartMessage(host, mess)
+      case mess: Any =>
+        throw new IllegalArgumentException(
+          "Evenement inconnu pour ce protocole"
+        );
     }
   }
   def broadcast(host: Node, sendFunction: (Node, Node, Transport) => Unit) {
@@ -41,7 +46,11 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
   }
   def receiveStartMessage(host: Node, mess: StartMessage) {
     //TODO : Modify this part so it act in accordance to the Leader definition
-    biggestValueReceived = (mess.roundNum,mess.clientValue)
+    biggestValueReceived =
+      (
+        currentRoundNum,
+        mess.clientValue
+      ) // HELP : If there's an error check if the round number is right
     broadcast(host, sendPrepare)
   }
   def receivePromise(host: Node, mess: Messages.Promises) {
@@ -60,7 +69,13 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
   }
   def sendCommit(host: Node, dest: Node, tr: Transport) {
     val mess: Commit =
-      new Commit(host.getID(), dest.getID(), mypid,biggestValueReceived._2, currentRoundNum)
+      new Commit(
+        host.getID(),
+        dest.getID(),
+        mypid,
+        biggestValueReceived._2,
+        currentRoundNum
+      )
     tr.send(host, dest, mess, mypid)
   }
 

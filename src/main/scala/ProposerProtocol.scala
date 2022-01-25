@@ -31,6 +31,7 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
     event match {
       case mess: Promises     => receivePromise(host, mess)
       case mess: StartMessage => receiveStartMessage(host, mess)
+      case mess: Reject => receiveReject(host, mess)
       case mess: Any =>
         throw new IllegalArgumentException(
           "Evenement inconnu pour ce protocole"
@@ -61,6 +62,9 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
     if (promiseReceivedCount > acceptorsCount / 2) {
       broadcast(host, sendCommit)
     }
+  }
+  def receiveReject(host : Node, mess : Messages.Reject) {
+    currentRoundNum = currentRoundNum +1;
   }
   def sendPrepare(host: Node, dest: Node, tr: Transport) {
     val mess: Prepare =

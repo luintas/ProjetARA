@@ -12,8 +12,8 @@ case class AcceptorProtocol(val prefix: String) extends EDProtocol {
     val pid_transport: Int =
         Configuration.getPid(prefix + "." + ProposerProtocol.PAR_TRANSPORT);
     private val mypid: Int = Configuration.lookupPid(tmp.last);
-    private var roundNum : Int = 0;
-    private var choosedValue: Int = 0;
+    private var roundNum : Long = 0;
+    private var choosedValue: Long = 0;
     private var oldValue: List[Integer] = List[Integer]();
 
     override def processEvent(host: Node, pid: Int, event: Object): Unit = {
@@ -46,6 +46,17 @@ case class AcceptorProtocol(val prefix: String) extends EDProtocol {
             broadcast(host, sendReject)
         }
         
+    }
+    def receiveCommit(host : Node, mess : Messages.Commit){
+      if( mess.roundNum >= roundNum){
+        choosedValue = mess.choosedValue
+        broadcast(host,sendAccepted)
+      }
+    }
+    def sendAccepted(host: Node, dest: Node, tr: Transport){
+        val mess: Accepted =
+            new Accepted(host.getID(), dest.getID(), mypid, choosedValue, roundNum)
+        tr.send(host, dest, mess, mypid)
     }
 
     def sendReject(host: Node, dest: Node, tr: Transport){

@@ -14,10 +14,10 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
   // Configuration.getInt(prefix + "." + HelloProtocol.PAR_MAXSIZELIST);
   private val mypid: Int = Configuration.lookupPid(tmp.last);
   private var mylist: List[Integer] = List[Integer]();
-  private var deja_dit_bonjour: Boolean = false;
-  private var currentRoundNum: Int = 0;
+  private var ProposerCurrentRoundNum: Int = 0;
   private var isLeader = false ;
   private var haveAleader = false;
+  private var TimetoWait : Long = 10;
 
   private val acceptorsCount = 0; //TODO Find a way to get the actual value
   private var promiseReceivedCount = 0;
@@ -49,7 +49,7 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
     //TODO : Modify this part so it act in accordance to the Leader definition
     biggestValueReceived =
       (
-        currentRoundNum,
+        ProposerCurrentRoundNum,
         mess.clientValue
       ) // HELP : If there's an error check if the round number is right
     broadcast(host, sendPrepare)
@@ -64,11 +64,16 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
     }
   }
   def receiveReject(host : Node, mess : Messages.Reject) {
-    currentRoundNum = currentRoundNum +1;
+    if(mess.roundNum >= ProposerCurrentRoundNum){
+      ProposerCurrentRoundNum = ProposerCurrentRoundNum +1;
+      Thread.sleep(TimetoWait)
+      TimetoWait += 10;
+      broadcast(host,sendPrepare)
+    }
   }
   def sendPrepare(host: Node, dest: Node, tr: Transport) {
     val mess: Prepare =
-      new Prepare(host.getID(), dest.getID(), mypid, currentRoundNum)
+      new Prepare(host.getID(), dest.getID(), mypid, ProposerCurrentRoundNum)
     tr.send(host, dest, mess, mypid)
   }
   def sendCommit(host: Node, dest: Node, tr: Transport) {
@@ -78,9 +83,12 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
         dest.getID(),
         mypid,
         biggestValueReceived._2,
-        currentRoundNum
+        ProposerCurrentRoundNum
       )
     tr.send(host, dest, mess, mypid)
+  }
+  def findLeader(host : Node, dest: Node, tr: Transport) {
+    
   }
 
 }

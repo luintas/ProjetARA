@@ -10,3 +10,6 @@ class Accepted(idsrc :Long, iddest : Long, pid : Int,val choosedValue : Long, va
 
 class Reject (idsrc :Long, iddest : Long, pid : Int, val roundNum : Long ) extends Message(idsrc,iddest,pid) 
 class StartMessage (idsrc :Long, iddest : Long, pid : Int, val roundNum : Long, val clientValue : Long ) extends Message(idsrc,iddest,pid) 
+
+class Ping( idsrc : Long, iddest : Long, pid : Int ) extends Message(idsrc,iddest, pid)
+class Pong( idsrc : Long, iddest : Long, pid : Int ) extends Message(idsrc,iddest,pid)

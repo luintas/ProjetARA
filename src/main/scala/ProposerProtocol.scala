@@ -18,7 +18,7 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
   private var currentRoundNum: Int = 0;
   private var isLeader = false ;
   private var haveAleader = false;
-
+  private var idMaster:Long = 0;
   private val acceptorsCount = 0; //TODO Find a way to get the actual value
   private var promiseReceivedCount = 0;
   private var biggestValueReceived: (Long, Long) = (0, 0) // (nbRound,value)
@@ -32,6 +32,8 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
       case mess: Promises     => receivePromise(host, mess)
       case mess: StartMessage => receiveStartMessage(host, mess)
       case mess: Reject => receiveReject(host, mess)
+      case mess: Ping => receivePing(host, mess)
+      case mess: Pong => receivePong(host, mess)
       case mess: Any =>
         throw new IllegalArgumentException(
           "Evenement inconnu pour ce protocole"
@@ -81,6 +83,14 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
         currentRoundNum
       )
     tr.send(host, dest, mess, mypid)
+  }
+
+  def receivePing(host: Node, mess: Messages.Ping){
+
+  }
+  
+  def receivePong(host: Node, mess: Messages.Ping){
+
   }
 
 }

@@ -22,8 +22,10 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
   private val acceptorsCount = 0; //TODO Find a way to get the actual value
   private var promiseReceivedCount = 0;
   private var biggestValueReceived: (Long, Long) = (0, 0) // (nbRound,value)
+  
 
   override def processEvent(host: Node, pid: Int, event: Object): Unit = {
+    val tr: Transport = host.getProtocol(pid_transport).asInstanceOf[Transport]
     if (pid != mypid)
       throw new IllegalArgumentException(
         "Incoherence sur l'identifiant de protocole"
@@ -32,8 +34,8 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
       case mess: Promises     => receivePromise(host, mess)
       case mess: StartMessage => receiveStartMessage(host, mess)
       case mess: Reject => receiveReject(host, mess)
-      case mess: Ping => receivePing(host, mess)
-      case mess: Pong => receivePong(host, mess)
+      case mess: Ping => receivePing(host, mess, tr)
+      case mess: Pong => receivePong(host, mess, tr)
       case mess: Any =>
         throw new IllegalArgumentException(
           "Evenement inconnu pour ce protocole"
@@ -85,32 +87,23 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
     tr.send(host, dest, mess, mypid)
   }
 
-  def receivePing(host: Node, mess: Messages.Ping){
-    idMaster = mess.id
-    broadcast(host, sendPong)
-  }
-
-  def sendPong(host: Node, dest: Node, tr: Transport){
+  def receivePing(host: Node, mess: Messages.Ping, tr: Transport){
+    val dest: Node = Network.get(mess.idsrc);
     val mess: Pong = new Pong(
-      host.getID(),
-      idMaster,
-      mypid,
-      mypid
-    )
-    tr.send(host, dest, mess, mypid)
+        host.getID(),
+        dest.getID(),
+        mypid
+        )
+    tr.send(host, dest, mess,mypid)
   }
 
-  def receivePong(host: Node, mess: Messages.Ping){
-
-    broadcast(host, sendPing)
-  }
-  def sendPing(host: Node, dest: Node, tr: Transport){
-    val mess: Pong = new Pong(
-      host.getID(),
-      idMaster,
-      mypid,
-      mypid
-    )
+  def receivePong(host: Node, mess: Messages.Pong, tr: Transport ){
+    val dest: Node = Network.get(mess.idsrc);
+    val mess: Ping = new Ping(
+        host.getID(),
+        dest.getID(),
+        mypid
+        )
     tr.send(host, dest, mess, mypid)
   }
 

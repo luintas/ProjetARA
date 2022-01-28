@@ -17,12 +17,30 @@ trait ProposerProtocol  {
   private var ProposerCurrentRoundNum: Int = 0;
   private var isLeader = false ;
   private var haveAleader = false;
+  private var idMaster:Long = 0;
   private var TimetoWait : Long = 10;
-
   private val acceptorsCount = 0; //TODO Find a way to get the actual value
   private var promiseReceivedCount = 0;
   private var biggestValueReceived: (Long, Long) = (0, 0) // (nbRound,value)
-
+  
+  override def processEvent(host: Node, pid: Int, event: Object): Unit = {
+    val tr: Transport = host.getProtocol(pid_transport).asInstanceOf[Transport]
+    if (pid != mypid)
+      throw new IllegalArgumentException(
+        "Incoherence sur l'identifiant de protocole"
+      );
+    event match {
+      case mess: Promises     => receivePromise(host, mess)
+      case mess: StartMessage => receiveStartMessage(host, mess)
+      case mess: Reject => receiveReject(host, mess)
+      case mess: Ping => receivePing(host, mess, tr)
+      case mess: Pong => receivePong(host, mess, tr)
+      case mess: Any =>
+        throw new IllegalArgumentException(
+          "Evenement inconnu pour ce protocole"
+        );
+    }
+  }
   def broadcast(host: Node, pid : Int, sendFunction: (Node, Node, Transport, Int) => Unit) {
     val tr: Transport = host.getProtocol(pid).asInstanceOf[Transport]
     for (i <- Range(0, Network.size())) {
@@ -74,6 +92,26 @@ trait ProposerProtocol  {
   }
   def findLeader(host : Node, dest: Node, tr: Transport) {
     
+  }
+
+  def receivePing(host: Node, mess: Messages.Ping, tr: Transport){
+    val dest: Node = Network.get(mess.idsrc);
+    val mess: Pong = new Pong(
+        host.getID(),
+        dest.getID(),
+        mypid
+        )
+    tr.send(host, dest, mess,mypid)
+  }
+
+  def receivePong(host: Node, mess: Messages.Pong, tr: Transport ){
+    val dest: Node = Network.get(mess.idsrc);
+    val mess: Ping = new Ping(
+        host.getID(),
+        dest.getID(),
+        mypid
+        )
+    tr.send(host, dest, mess, mypid)
   }
 
 }

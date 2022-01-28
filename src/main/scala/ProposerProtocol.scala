@@ -86,11 +86,32 @@ case class ProposerProtocol(val prefix: String) extends EDProtocol {
   }
 
   def receivePing(host: Node, mess: Messages.Ping){
-
+    idMaster = mess.id
+    broadcast(host, sendPong)
   }
-  
+
+  def sendPong(host: Node, dest: Node, tr: Transport){
+    val mess: Pong = new Pong(
+      host.getID(),
+      idMaster,
+      mypid,
+      mypid
+    )
+    tr.send(host, dest, mess, mypid)
+  }
+
   def receivePong(host: Node, mess: Messages.Ping){
 
+    broadcast(host, sendPing)
+  }
+  def sendPing(host: Node, dest: Node, tr: Transport){
+    val mess: Pong = new Pong(
+      host.getID(),
+      idMaster,
+      mypid,
+      mypid
+    )
+    tr.send(host, dest, mess, mypid)
   }
 
 }

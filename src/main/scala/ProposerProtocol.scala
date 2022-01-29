@@ -14,7 +14,7 @@ trait ProposerProtocol {
 //   var maxsizelist: Int =
   // Configuration.getInt(prefix + "." + HelloProtocol.PAR_MAXSIZELIST);
   private var mylist: List[Integer] = List[Integer]();
-  private var proposerCurrentRoundNum: Int = 0;
+  private var proposerCurrentRoundNum: Long = 0;
   private var amLeader = false;
   private var haveAleader = false;
   private var idLeader: Long = 0;
@@ -80,7 +80,7 @@ trait ProposerProtocol {
     tr.send(host, dest, mess, pid)
   }
   def findLeader(host: Node, pid: Int, tr: Transport) {
-    leaderIDAndRoundNum = (-255,leaderIDAndRoundNum._2)
+    leaderIDAndRoundNum = (proposerCurrentRoundNum,leaderIDAndRoundNum._2)
     if( ! haveAleader)
       broadcast(host, pid, sendCandidate)
   }
@@ -95,6 +95,10 @@ trait ProposerProtocol {
     tr.send(host, dest, mess, pid)
   }
   def receiveCandidate(host: Node, mess: Messages.Candidate,pid : Int, tr : Transport) {
+    if(mess.roundNum > leaderIDAndRoundNum._2){
+      nbAckReceived = 0;
+      proposerCurrentRoundNum = mess.roundNum
+    }
     if(mess.roundNum > leaderIDAndRoundNum._2 || (mess.roundNum == leaderIDAndRoundNum._2 && leaderIDAndRoundNum._1 < 0 )  ){
       // println(host.getID  + " : idsrc is "+mess.idsrc + " iddest is "+mess.iddest)
       leaderIDAndRoundNum = (mess.idsrc,mess.roundNum)

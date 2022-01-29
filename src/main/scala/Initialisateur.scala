@@ -21,5 +21,5 @@ class Initialisateur(prefix: String) extends Control {
 
 }
 object Initialisateur {
-  val PAR_PROTO_HELLO: String = "hellopid";
+  val PAR_PROTO_HELLO: String = "paxospid";
 }

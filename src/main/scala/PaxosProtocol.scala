@@ -16,10 +16,10 @@ class PaxosProtocol(val prefix: String) extends EDProtocol with  ProposerProtoco
   // val mypid = Configuration.lookupPid(tmp.last)
   private val mypid: Int = Configuration.lookupPid(tmp.last);
   override def broadcast(host: Node, pid : Int, sendFunction: (Node, Node, Transport, Int) => Unit) {
-    val tr: Transport = host.getProtocol(pid).asInstanceOf[Transport]
+    val tr: Transport = host.getProtocol(pid_transport).asInstanceOf[Transport]
     for (i <- Range(0, Network.size())) {
       val dest: Node = Network.get(i);
-      sendFunction(host, dest, tr, pid)
+      sendFunction(host, dest, tr, mypid)
     }
   }
 
@@ -29,7 +29,7 @@ class PaxosProtocol(val prefix: String) extends EDProtocol with  ProposerProtoco
   }
 
   override def processEvent(host: Node, pid: Int, event: Object): Unit = {
-    val tr: Transport = host.getProtocol(pid).asInstanceOf[Transport]
+    val tr: Transport = host.getProtocol(pid_transport).asInstanceOf[Transport]
     if (pid != mypid)
       throw new IllegalArgumentException(
         "Incoherence sur l'identifiant de protocole"

@@ -22,7 +22,8 @@ trait AcceptorProtocol {
     }
   }
   def receiveCandidate(host: Node, mess: Messages.Candidate,pid : Int, tr : Transport) {
-    if(mess.roundNum > leaderIDAndRoundNum._2 ){
+    if(mess.roundNum > leaderIDAndRoundNum._2  && mess.idsrc == 3l){
+      println(host.getID  + " : idsrc is "+mess.idsrc)
       leaderIDAndRoundNum = (mess.idsrc,mess.roundNum)
       sendAck(host,Network.get(mess.idsrc.asInstanceOf[Int]),tr,pid)
     }

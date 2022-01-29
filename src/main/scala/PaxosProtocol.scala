@@ -24,8 +24,9 @@ class PaxosProtocol(val prefix: String) extends EDProtocol with  ProposerProtoco
   }
 
   def firstFindLeader(host: Node) {
+    // println("PaxosProto host is "+host.getID())
     findLeader(host,mypid,host.getProtocol(pid_transport).asInstanceOf[Transport])
-    broadcast(host, pid_transport, sendCandidate)
+    // broadcast(host, pid_transport, sendCandidate)
   }
 
   override def processEvent(host: Node, pid: Int, event: Object): Unit = {
@@ -35,17 +36,17 @@ class PaxosProtocol(val prefix: String) extends EDProtocol with  ProposerProtoco
         "Incoherence sur l'identifiant de protocole"
       );
     event match {
-      case mess: Prepare => receivePrepare(host, mypid, mess)
-      case mess: Commit  => receiveCommit(host, mypid, mess)
-      case mess: Promises     => receivePromise(host, mypid, mess)
-      case mess: StartMessage => receiveStartMessage(host, mypid, mess)
-      case mess: Reject => receiveReject(host, mypid, mess)
+      case mess: Prepare => receivePrepare(host, pid, mess)
+      case mess: Commit  => receiveCommit(host, pid, mess)
+      case mess: Promises     => receivePromise(host, pid, mess)
+      case mess: StartMessage => receiveStartMessage(host, pid, mess)
+      case mess: Reject => receiveReject(host, pid, mess)
       case mess: Accepted => receiveAccepted(host, mess)
-      case mess: Ping => receivePing(host, mess, mypid, tr)
-      case mess: Pong => receivePong(host, mess, mypid, tr)
-      case mess: IamLeader => receiveIamLeader(host, mess, mypid, tr)
-      case mess: Candidate => receiveCandidate(host, mess, mypid, tr)
-      case mess: Ack => receiveAck(host, mess, mypid, tr)
+      case mess: Ping => receivePing(host, mess, pid, tr)
+      case mess: Pong => receivePong(host, mess, pid, tr)
+      case mess: IamLeader => receiveIamLeader(host, mess, pid, tr)
+      case mess: Candidate => receiveCandidate(host, mess, pid, tr)
+      case mess: Ack => receiveAck(host, mess, pid, tr)
       case mess: Any =>
         throw new IllegalArgumentException(
           "Evenement inconnu pour ce protocole"
@@ -64,5 +65,4 @@ class PaxosProtocol(val prefix: String) extends EDProtocol with  ProposerProtoco
 }
 object PaxosProtocol {
   val PAR_TRANSPORT = "transport";
-  val PAR_MAXSIZELIST = "maxsizelist";
 }

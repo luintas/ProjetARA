@@ -12,6 +12,8 @@ class Initialisateur(prefix: String) extends Control {
       val pid = 
     for (i <- Range(0, Network.size())) {
       val node: Node = Network.get(i);
+
+    //   println("Initialisateur is "+node.getID())
       val paxos: PaxosProtocol =
         node.getProtocol(hellopid).asInstanceOf[PaxosProtocol];
       paxos.firstFindLeader(node);

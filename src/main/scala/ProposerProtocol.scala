@@ -24,6 +24,8 @@ trait ProposerProtocol {
   private var promiseReceivedCount = 0;
   private var biggestValueReceived: (Long, Long) = (0, 0) // (nbRound,value)
   private var nbAckReceived: Int = 0;
+  var leaderIDAndRoundNum : (Long,Long) = (-255,-255); //Acknowledged leaderID
+
 
   def broadcast(
       host: Node,
@@ -78,7 +80,9 @@ trait ProposerProtocol {
     tr.send(host, dest, mess, pid)
   }
   def findLeader(host: Node, pid: Int, tr: Transport) {
-    broadcast(host, pid, sendCandidate)
+    leaderIDAndRoundNum = (-255,leaderIDAndRoundNum._2)
+    if( ! haveAleader)
+      broadcast(host, pid, sendCandidate)
   }
   def sendCandidate(host: Node, dest: Node, tr: Transport, pid: Int) {
     val mess: Candidate =
@@ -89,6 +93,22 @@ trait ProposerProtocol {
         proposerCurrentRoundNum
       )
     tr.send(host, dest, mess, pid)
+  }
+  def receiveCandidate(host: Node, mess: Messages.Candidate,pid : Int, tr : Transport) {
+    if(mess.roundNum > leaderIDAndRoundNum._2 || (mess.roundNum == leaderIDAndRoundNum._2 && leaderIDAndRoundNum._1 < 0 )  ){
+      // println(host.getID  + " : idsrc is "+mess.idsrc + " iddest is "+mess.iddest)
+      leaderIDAndRoundNum = (mess.idsrc,mess.roundNum)
+      sendAck(host,Network.get(mess.idsrc.asInstanceOf[Int]),tr,pid)
+    }
+  }
+  def sendAck(host: Node, dest: Node, tr: Transport, pid : Int) {
+    val mess: Ack =
+      new Ack(host.getID(), dest.getID(), pid)
+    tr.send(host, dest, mess, pid)
+    Thread.sleep(TimetoWait)
+    proposerCurrentRoundNum +=1;
+    nbAckReceived = 0;
+    findLeader(host,pid,tr)
   }
   def receiveAck(host: Node, mess: Messages.Ack, pid: Int, tr: Transport) {
     if (! haveAleader ) {
@@ -112,7 +132,7 @@ trait ProposerProtocol {
     haveAleader = true;
     amLeader = host.getID() == mess.idsrc
     idLeader = mess.idsrc
-    val str = host.getID + " : " + ( if(amLeader)("I am the Leader ") else ("The leader is"+ idLeader))
+    val str = host.getID +"/ " + proposerCurrentRoundNum + " "+ " : " + ( if(amLeader)("I am the Leader ") else ("The leader is"+ idLeader))
     println(str)
   }
   def receivePing(host: Node, mess: Messages.Ping, pid: Int, tr: Transport) {

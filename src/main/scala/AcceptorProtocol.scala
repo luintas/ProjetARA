@@ -12,6 +12,7 @@ trait AcceptorProtocol {
   var choosedValue: Long = 0; // Current accepted value
   var oldValue: List[Integer] = List[Integer](); // Last accepted value
   var oldRoundNum: Long = 0; // Store num of the last round in which we sent a Promise 
+  var leaderIDAndRoundNum : (Long,Long) = (-255,-255); //Acknowledged leaderID
 
   def broadcast(host: Node, pid : Int, sendFunction: (Node, Node, Transport, Int) => Unit) {
     val tr: Transport = host.getProtocol(pid).asInstanceOf[Transport]
@@ -19,6 +20,17 @@ trait AcceptorProtocol {
       val dest: Node = Network.get(i);
       sendFunction(host, dest, tr, pid)
     }
+  }
+  def receiveCandidate(host: Node, mess: Messages.Candidate,pid : Int, tr : Transport) {
+    if(mess.roundNum > leaderIDAndRoundNum._2 ){
+      leaderIDAndRoundNum = (mess.idsrc,mess.roundNum)
+      sendAck(host,Network.get(mess.idsrc.asInstanceOf[Int]),tr,pid)
+    }
+  }
+  def sendAck(host: Node, dest: Node, tr: Transport, pid : Int) {
+    val mess: Ack =
+      new Ack(host.getID(), dest.getID(), pid)
+    tr.send(host, dest, mess, pid)
   }
   def receivePrepare(host: Node,pid : Int, mess: Messages.Prepare) {
     //si n > a (num round)

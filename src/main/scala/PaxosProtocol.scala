@@ -22,7 +22,9 @@ class PaxosProtocol(val prefix: String) extends EDProtocol with  ProposerProtoco
       sendFunction(host, dest, tr, pid)
     }
   }
-
+  def findLeader(host : Node, dest: Node, tr: Transport) {
+    
+  }
   override def processEvent(host: Node, pid: Int, event: Object): Unit = {
     val tr: Transport = host.getProtocol(pid).asInstanceOf[Transport]
     if (pid != mypid)
@@ -38,6 +40,9 @@ class PaxosProtocol(val prefix: String) extends EDProtocol with  ProposerProtoco
       case mess: Accepted => receiveAccepted(host, mess)
       case mess: Ping => receivePing(host, mess, mypid, tr)
       case mess: Pong => receivePong(host, mess, mypid, tr)
+      case mess: IamLeader => receiveIamLeader(host, mess, mypid, tr)
+      case mess: Candidate => receiveCandidate(host, mess, mypid, tr)
+      case mess: Ack => receiveAck(host, mess, mypid, tr)
       case mess: Any =>
         throw new IllegalArgumentException(
           "Evenement inconnu pour ce protocole"

@@ -9,8 +9,8 @@ import peersim.core.Network
 
 class PaxosProtocol(val prefix: String) extends EDProtocol with  ProposerProtocol with AcceptorProtocol with LearnerProtocol {
   val tmp = prefix.split("\\.")
-  //  val pid_transport: Int =
-    // Configuration.getPid(prefix + "." + ProposerProtocol.PAR_TRANSPORT);
+   val pid_transport: Int =
+    Configuration.getPid(prefix + "." + ProposerProtocol.PAR_TRANSPORT);
 
     //There will probably be a problem with the pid and pid protocol
   // val mypid = Configuration.lookupPid(tmp.last)
@@ -22,9 +22,12 @@ class PaxosProtocol(val prefix: String) extends EDProtocol with  ProposerProtoco
       sendFunction(host, dest, tr, pid)
     }
   }
-  def findLeader(host : Node, dest: Node, tr: Transport) {
-    
+
+  def firstFindLeader(host: Node) {
+    findLeader(host,mypid,host.getProtocol(pid_transport).asInstanceOf[Transport])
+    broadcast(host, pid_transport, sendCandidate)
   }
+
   override def processEvent(host: Node, pid: Int, event: Object): Unit = {
     val tr: Transport = host.getProtocol(pid).asInstanceOf[Transport]
     if (pid != mypid)
@@ -49,4 +52,17 @@ class PaxosProtocol(val prefix: String) extends EDProtocol with  ProposerProtoco
         );
     }
   }
+  override def clone(): Object = {
+    try {
+      var ap: PaxosProtocol = super.clone().asInstanceOf[PaxosProtocol];
+      return ap;
+    } catch {
+      case e: CloneNotSupportedException => ()
+    }
+    return null;
+  }
+}
+object PaxosProtocol {
+  val PAR_TRANSPORT = "transport";
+  val PAR_MAXSIZELIST = "maxsizelist";
 }

@@ -15,7 +15,7 @@ trait ProposerProtocol {
   // Configuration.getInt(prefix + "." + HelloProtocol.PAR_MAXSIZELIST);
   private var mylist: List[Integer] = List[Integer]();
   private var proposerCurrentRoundNum: Int = 0;
-  private var isLeader = false;
+  private var amLeader = false;
   private var haveAleader = false;
   private var idLeader: Long = 0;
   private var TimetoWait: Long = 10;
@@ -77,7 +77,7 @@ trait ProposerProtocol {
       )
     tr.send(host, dest, mess, pid)
   }
-  def findLeader(host: Node, dest: Node, pid: Int, tr: Transport) {
+  def findLeader(host: Node, pid: Int, tr: Transport) {
     broadcast(host, pid, sendCandidate)
   }
   def sendCandidate(host: Node, dest: Node, tr: Transport, pid: Int) {
@@ -110,7 +110,10 @@ trait ProposerProtocol {
   }
   def receiveIamLeader(host: Node, mess: Messages.IamLeader, pid: Int, tr: Transport){
     haveAleader = true;
-    isLeader = host.getID() == mess.idsrc
+    amLeader = host.getID() == mess.idsrc
+    idLeader = mess.idsrc
+    val str = host.getID + " : " + ( if(amLeader)("I am the Leader ") else ("The leader is"+ idLeader))
+    println(str)
   }
   def receivePing(host: Node, mess: Messages.Ping, pid: Int, tr: Transport) {
     val dest: Node = Network.get(mess.idsrc.asInstanceOf[Int]);

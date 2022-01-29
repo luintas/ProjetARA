@@ -6,10 +6,10 @@ protocol.transport UniformRandomTransport
 protocol.transport.mindelay 20
 protocol.transport.maxdelay 30
 
-protocol.hello HelloProtocol
-protocol.hello.transport transport
-protocol.hello.maxsizelist 5
+protocol.paxos PaxosProtocol
+protocol.paxos.transport transport
+protocol.paxos.maxsizelist 5
 
 
 init.i Initialisateur
-init.i.hellopid hello
+init.i.paxospid paxos

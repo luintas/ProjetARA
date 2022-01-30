@@ -17,6 +17,8 @@ class Ping( idsrc :Long, iddest : Long, pid : Int) extends Message(idsrc,iddest,
 class Pong( idsrc :Long, iddest : Long, pid : Int) extends Message(idsrc,iddest,pid)
 
 class Candidate( idsrc :Long, iddest : Long, pid : Int, val roundNum : Long) extends Message(idsrc,iddest,pid)
+
+class  RejectCandidate( idsrc :Long, iddest : Long, pid : Int, val roundNum : Long) extends Message(idsrc,iddest,pid)
 class IamLeader( idsrc :Long, iddest : Long, pid : Int, val roundNum : Long) extends Message(idsrc,iddest,pid)
 
-class Ack( idsrc :Long, iddest : Long, pid : Int) extends Message(idsrc,iddest,pid)
+class Ack( idsrc :Long, iddest : Long, pid : Int, val roundNum : Long) extends Message(idsrc,iddest,pid)

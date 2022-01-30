@@ -47,6 +47,7 @@ class PaxosProtocol(val prefix: String) extends EDProtocol with  ProposerProtoco
       case mess: IamLeader => receiveIamLeader(host, mess, pid, tr)
       case mess: Candidate => receiveCandidate(host, mess, pid, tr)
       case mess: Ack => receiveAck(host, mess, pid, tr)
+      case mess: RejectCandidate => receiveRejectCandidate(host,mess,pid,tr)
       case mess: Any =>
         throw new IllegalArgumentException(
           "Evenement inconnu pour ce protocole"

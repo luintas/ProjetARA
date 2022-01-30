@@ -24,6 +24,7 @@ trait ProposerProtocol {
   private var promiseReceivedCount = 0;
   private var biggestValueReceived: (Long, Long) = (0, 0) // (nbRound,value)
   private var nbAckReceived: Int = 0;
+  private var nbRejectReceived: Int = 0;
   var leaderIDAndRoundNum : (Long,Long) = (-255,-255); //Acknowledged leaderID
 
 
@@ -104,21 +105,45 @@ trait ProposerProtocol {
       leaderIDAndRoundNum = (mess.idsrc,mess.roundNum)
       sendAck(host,Network.get(mess.idsrc.asInstanceOf[Int]),tr,pid)
     }
+    else
+      sendRejectCandidate(host,Network.get(mess.idsrc.asInstanceOf[Int]),tr,pid)
+  }
+  def sendRejectCandidate(host: Node, dest: Node, tr: Transport, pid : Int) {
+    val mess: RejectCandidate =
+      new RejectCandidate(host.getID(), dest.getID(), pid,proposerCurrentRoundNum)
+    tr.send(host, dest, mess, pid)
   }
   def sendAck(host: Node, dest: Node, tr: Transport, pid : Int) {
     val mess: Ack =
-      new Ack(host.getID(), dest.getID(), pid)
+      new Ack(host.getID(), dest.getID(), pid,proposerCurrentRoundNum)
     tr.send(host, dest, mess, pid)
-    Thread.sleep(TimetoWait)
-    proposerCurrentRoundNum +=1;
-    nbAckReceived = 0;
-    findLeader(host,pid,tr)
   }
   def receiveAck(host: Node, mess: Messages.Ack, pid: Int, tr: Transport) {
-    if (! haveAleader ) {
-      nbAckReceived = nbAckReceived + 1
-      if (nbAckReceived > acceptorsCount / 2) {
-        broadcast(host, pid, sendIamLeader)
+    if (mess.roundNum >= proposerCurrentRoundNum){
+      if (! haveAleader ) {
+        nbAckReceived = nbAckReceived + 1
+        // if(host.getID() == 3l) println("tot = "+(nbAckReceived + nbRejectReceived))
+        if ((nbAckReceived == (acceptorsCount / 2)+1)) {
+          broadcast(host, pid, sendIamLeader)
+        }
+        if(nbRejectReceived + nbAckReceived == acceptorsCount){
+          proposerCurrentRoundNum +=1;
+          nbAckReceived = 0;
+          nbRejectReceived = 0
+          findLeader(host,pid,tr)
+        }
+      }
+    }
+  }
+  def receiveRejectCandidate(host: Node, mess: Messages.RejectCandidate, pid: Int, tr: Transport) {
+    if (mess.roundNum >= proposerCurrentRoundNum ) {
+      nbRejectReceived = nbRejectReceived + 1
+      // if(host.getID() == 3l) println("tot = "+(nbAckReceived + nbRejectReceived))
+      if(nbRejectReceived + nbAckReceived == acceptorsCount){
+        proposerCurrentRoundNum +=1;
+        nbAckReceived = 0;
+        nbRejectReceived = 0
+        findLeader(host,pid,tr)
       }
     }
   }
@@ -133,11 +158,11 @@ trait ProposerProtocol {
     tr.send(host, dest, mess, pid)
   }
   def receiveIamLeader(host: Node, mess: Messages.IamLeader, pid: Int, tr: Transport){
-    haveAleader = true;
     amLeader = host.getID() == mess.idsrc
     idLeader = mess.idsrc
-    val str = host.getID +"/ " + proposerCurrentRoundNum + " "+ " : " + ( if(amLeader)("I am the Leader ") else ("The leader is"+ idLeader))
-    println(str)
+    val str = host.getID +"/ " + proposerCurrentRoundNum+ " : " + ( if(amLeader)("I am the Leader ") else ("The leader is "+ idLeader))
+    if(amLeader)  println(str)
+    haveAleader = true;
   }
   def receivePing(host: Node, mess: Messages.Ping, pid: Int, tr: Transport) {
     val dest: Node = Network.get(mess.idsrc.asInstanceOf[Int]);
